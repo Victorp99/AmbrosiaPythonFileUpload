@@ -2,14 +2,14 @@
    body {
 		background-image: url("http://wallpapercave.com/wp/BWj5hjo.png");
 		}
-		
+
 	header {
 		color:yellow;
 		text-shadow:4px 2px 4px #C2C2C2;
 		text-align:center;
-		padding:5px;	 
+		padding:5px;
 			}
-	
+
 	.textox {
 		width: 250pxpx;
 		height: 30px;
@@ -31,5 +31,4 @@
 		}
 	.textox:active  {
 		border: solid 2px #0043EB;
-			}					
-	
+			}
