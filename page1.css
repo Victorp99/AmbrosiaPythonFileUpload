@@ -1,0 +1,35 @@
+
+   body {
+		background-image: url("http://wallpapercave.com/wp/BWj5hjo.png");
+		}
+		
+	header {
+		color:yellow;
+		text-shadow:4px 2px 4px #C2C2C2;
+		text-align:center;
+		padding:5px;	 
+			}
+	
+	.textox {
+		width: 250pxpx;
+		height: 30px;
+		border: solid 2px #00E3E3;
+		padding: 2px;
+		border-radius: 5px;
+		font-size: 12px;
+		box-shadow: 0px 1px 2px 0px #9C9C9C;
+		background-color: #FFFFFF;
+		outline: none;
+		color: #474747;
+			}
+	.textox:hover  {
+		border: 2px solid #FF00D5;
+		}
+	.textox:focus  {
+		border: solid 2px #00D43C;
+		box-shadow: inset 0px 1px 2px 0px #9C9C9C;
+		}
+	.textox:active  {
+		border: solid 2px #0043EB;
+			}					
+	
