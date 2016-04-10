@@ -83,6 +83,7 @@
 	exit('Login Failed');
   }
 
+  $ssh->setTimeout(120);
   #move the uploaded python to the user's home area
   $fmove = $ssh->exec('cp ' . $_FILES['fileToUpload']['tmp_name'] . ' ./' . $_FILES['fileToUpload']['name']);
 
@@ -96,30 +97,37 @@
   else{
 	  $output = $ssh->exec('python3 ' . $_FILES['fileToUpload']['name']);
   }
-  echo 'Output: <br> ' . $output . "<br>";
+  #echo $ssh->isTimeout();
+  #echo $ssh->getExitStatus();
+  echo 'Output: <br> ' . $output . '<br>';
 
   #process the output
-  $outnametemp = explode(":", $output);
-  $outnametemp2 = explode("[", $outnametemp[0]);
-  $outnametemp3 = explode(".", $outnametemp2[1]);
-  $outputfilename = $outnametemp3[0];
-  #echo $outputfilename . "<br>";
-  $tmpimage = '/tmp/' . $outputfilename . '.png';
-  $log = '/tmp/' . $outputfilename . '.log';
-  #echo $tmpimage . "<br>";
-  #echo $log . "<br>";
+  $imagefiles = explode("]", $output);
+  unset($imagefiles[count($imagefiles)-1]);
+    #echo 'Length = ' . count($imagefiles) . '<br>';
+  foreach ($imagefiles as &$image){
+	#echo $image . '<br>';
+	$image = substr($image,strpos($image,"[")+1,strpos($image,":")-strpos($image,"[")-1);
+	#echo $image . '<br>';
+  }
   
-  #move the image file so that it is accessible
-  echo $ssh->exec('mv ' . $tmpimage . ' /usr/home/www/ambrosia/images/');
-  echo '<br>';
+  #move the image files so that they are accessible
+  foreach ($imagefiles as $im){
+	  #echo 'move ' . $im . '<br>';
+	  #echo system('ls -rt /tmp/ | grep stasiks631*');
+	  #echo '<br>';
+	  #echo $ssh->exec('ls -rt /tmp/ | grep stasiks631*');
+	  echo $ssh->exec('mv /tmp/' . $im . ' /usr/home/www/ambrosia/images/');
+  }
+  
   #remove the python file that was run
   echo $ssh->exec('rm ' . $_FILES['fileToUpload']['name']);
   echo '<br>';
   
-  #display the image file
-  $image = './images/' . $outputfilename . '.png';
+  #display the image files
+  foreach ($imagefiles as $im){
+	  echo '<img src=./images/' . $im . '> <br>';
+  }
   
-  echo '
-    <img src=' . $image . '>
-    </body>'
+  echo '</body>';
  ?>
