@@ -32,7 +32,7 @@
                   $_SESSION['timeout'] = time();  // update creation time
                   $_SESSION['username'] = $_POST['username']; // session suername
 				  $_SESSION['password'] = $_POST['password'];  // session password
-				  header('Location: index.php'); //link to upload page 
+				  header('Location: index.html'); //link to upload page 
 		}
 		else{
 				$msg =  'Please enter your username and password.';
