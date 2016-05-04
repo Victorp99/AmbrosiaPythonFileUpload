@@ -11,12 +11,19 @@
   if(!file_exists($_FILES['fileToUpload']['tmp_name']) || !is_uploaded_file($_FILES['fileToUpload']['tmp_name'])) {
 	exit('No upload');
   }
-  #check to see if file uploaded is a python file
+#check to see if file's mime type is python's mime type.
   /*if($_FILES['fileToUpload']['type'] != "text/plain"){
 	exit("You did not upload a python file.");
   }*/
+
+  $path_parts = pathinfo($_FILES["fileToUpload"]["name"]);
+  $extension = $path_parts['extension'];
+  #check to see if the file has an .py extension
+  if($extension != "py"){
+    exit("Please upload a file that has a .py extension.");
+  }
+
   #check to see if ambrosia is being uploaded by checking for: from ambrosia import *
-  #echo file_get_contents($_FILES['fileToUpload']['tmp_name']);
   $fileContents = file_get_contents($_FILES['fileToUpload']['tmp_name']);
   function multiexplode ($delimiters,$string) {
 	$ready = str_replace($delimiters, $delimiters[0], $string);
@@ -71,52 +78,60 @@
   }
 
   //if validation of file was successful, run the python file and return the output
-  echo '<head><title>Ambrosia</title></head><body>';
   echo 'You have requested to run the file ' . $_FILES['fileToUpload']['name'] . "<br>";
   
-  #changer permission of the uploaded file so that it can be moved after ssh
+  #change permission of the uploaded file so that it can be moved after ssh
   system('chmod 777 ' . $_FILES['fileToUpload']['tmp_name']);
   
   #log in via ssh with ascg username and password
   $ssh = new Net_SSH2('ascg.strose.edu');
-  if (!$ssh->login($_POST["username"], $_POST["password"])) {
-	exit('Login Failed');
+  if (!$ssh->login($_POST["username"], $_POST["pass"])) {
+	   exit('Login Failed');
   }
 
-  $ssh->setTimeout(120);
+  $ssh->setTimeout($_POST["timelimit"]);
   #move the uploaded python to the user's home area
   $fmove = $ssh->exec('cp ' . $_FILES['fileToUpload']['tmp_name'] . ' ./' . $_FILES['fileToUpload']['name']);
 
   #get the shell
-  $checksh = $ssh-->exec('echo $0');
+  $checksh = $ssh->exec('echo $0');
 
   #if bash shell, set python path and run file; otherwise just run file.
-  if ($checksh == '-bash'){
+  if (trim($checksh) == 'bash'){
 	$output = $ssh->exec('export PYTHONPATH=${PYTHONPATH}:/home/ascg/ambrosia/python/; python3 ' . $_FILES['fileToUpload']['name']);
   }
   else{
 	  $output = $ssh->exec('python3 ' . $_FILES['fileToUpload']['name']);
   }
-  #echo $ssh->isTimeout();
-  #echo $ssh->getExitStatus();
+  
+  #if the job exceeds the run time, alert to partial output
+  if($ssh->isTimeout()){
+	  echo "!!!!!!WARNING!!!!!!<br>
+	  You have exceeded the run time limit.<br>
+	  Any output displayed below may only be PARTIAL.<br>
+	  Try increasing the run time limit and re-submitting.<br>
+	  If that doesn't work, there may be a problem with your input (e.g. infinite loop).<br>
+	  <br>
+	  !!!!!!PARTIAL OUTPUT BELOW!!!!!!<br>";
+	  $tokill = $ssh->exec(" ps ux -o pid,command | grep [p]ython3");
+	  $topid = preg_split('/\s+/', $tokill);
+	  $pid = $topid[1];
+	  $kill = true;
+  }
+  else{
+	  $kill = false;
+  }
   echo 'Output: <br> ' . $output . '<br>';
 
   #process the output
   $imagefiles = explode("]", $output);
   unset($imagefiles[count($imagefiles)-1]);
-    #echo 'Length = ' . count($imagefiles) . '<br>';
   foreach ($imagefiles as &$image){
-	#echo $image . '<br>';
 	$image = substr($image,strpos($image,"[")+1,strpos($image,":")-strpos($image,"[")-1);
-	#echo $image . '<br>';
   }
   
   #move the image files so that they are accessible
   foreach ($imagefiles as $im){
-	  #echo 'move ' . $im . '<br>';
-	  #echo system('ls -rt /tmp/ | grep stasiks631*');
-	  #echo '<br>';
-	  #echo $ssh->exec('ls -rt /tmp/ | grep stasiks631*');
 	  echo $ssh->exec('mv /tmp/' . $im . ' /usr/home/www/ambrosia/images/');
   }
   
@@ -129,5 +144,9 @@
 	  echo '<img src=./images/' . $im . '> <br>';
   }
   
-  echo '</body>';
+  #if the run time limit was exceeded, kill the job
+  if($kill){
+	  $ssh->exec('kill ' . trim($pid));
+  }
+  $ssh->disconnect();
  ?>
